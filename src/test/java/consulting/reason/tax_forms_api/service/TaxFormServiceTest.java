@@ -8,6 +8,11 @@ import consulting.reason.tax_forms_api.entity.TaxForm;
 import consulting.reason.tax_forms_api.enums.TaxFormStatus;
 import consulting.reason.tax_forms_api.exception.TaxFormStatusException;
 import consulting.reason.tax_forms_api.repository.TaxFormRepository;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,6 +20,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,6 +31,7 @@ public class TaxFormServiceTest extends AbstractServiceTest {
     private TaxFormService taxFormService;
     private TaxForm taxForm;
     private TaxFormDto taxFormDto;
+    private Validator validator;
     private final TaxFormDetailsRequest taxFormDetailsRequest = TaxFormDetailsRequest.builder()
             .ratio(0.5)
             .assessedValue(100)
@@ -45,6 +52,8 @@ public class TaxFormServiceTest extends AbstractServiceTest {
                 .status(TaxFormStatus.NOT_STARTED)
                 .build());
         taxFormDto = modelMapper.map(taxForm, TaxFormDto.class);
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
     }
 
     @Test
@@ -91,5 +100,19 @@ public class TaxFormServiceTest extends AbstractServiceTest {
         assertThatThrownBy(() -> taxFormService.save(taxForm.getId(), taxFormDetailsRequest))
                 .isInstanceOf(TaxFormStatusException.class)
                 .hasMessage(taxFormStatusException.getMessage());
+    }
+    
+    @Test
+    void testSaveWithInvalidRequest() {
+        TaxFormDetailsRequest invalidRequest = TaxFormDetailsRequest.builder()
+                .ratio(-0.5)
+                .assessedValue(-100)
+                .appraisedValue(-200L)
+                .comments("T".repeat(501))
+                .build();
+
+        Set<ConstraintViolation<TaxFormDetailsRequest>> violations = validator.validate(invalidRequest);
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).hasSize(4);
     }
 }

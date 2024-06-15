@@ -19,18 +19,18 @@ public class TaxFormController {
     }
 
     @GetMapping
-    public List<TaxFormDto> findAllByYear(@RequestParam Integer year) {
+    public List<TaxFormDto> findAllByYear(@RequestParam("year") Integer year) {
         return taxFormService.findAllByYear(year);
     }
 
     @GetMapping("/{id}")
-    public TaxFormDto findById(@PathVariable Integer id) {
+    public TaxFormDto findById(@PathVariable("id") Integer id) {
         return taxFormService.findById(id)
                 .orElseThrow(() -> new TaxFormNotFoundException(id));
     }
 
     @PatchMapping("/{id}")
-    public TaxFormDto save(@PathVariable Integer id, @Validated @RequestBody TaxFormDetailsRequest taxFormDetailsRequest) {
+    public TaxFormDto save(@PathVariable("id") Integer id, @Validated @RequestBody TaxFormDetailsRequest taxFormDetailsRequest) {
         return taxFormService.save(id, taxFormDetailsRequest)
                 .orElseThrow(() -> new TaxFormNotFoundException(id));
     }

@@ -95,4 +95,36 @@ public class TaxFormControllerTest extends AbstractControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
+    
+    @Test
+    void testAssessedValueIsInvalid() throws Exception {
+        mockMvc.perform(patch(Endpoints.FORMS + "/" + taxFormDto.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assessedValue\": -1, \"appraisedValue\": 50000, \"ratio\": 0.5, \"comments\": \"testing\"}"))
+                .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void testAppraisedValueIsInvalid() throws Exception {
+        mockMvc.perform(patch(Endpoints.FORMS + "/" + taxFormDto.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assessedValue\": 0.5, \"appraisedValue\": -1, \"ratio\": 0.5, \"comments\": \"testing\"}"))
+                .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void testRatioIsInvalid() throws Exception {
+        mockMvc.perform(patch(Endpoints.FORMS + "/" + taxFormDto.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assessedValue\": -1, \"appraisedValue\": 50000, \"ratio\": 5, \"comments\": \"testing\"}"))
+                .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void testCommentsIsInvalid() throws Exception {
+        mockMvc.perform(patch(Endpoints.FORMS + "/" + taxFormDto.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assessedValue\": -1, \"appraisedValue\": 50000, \"ratio\": 0.5, \"comments\": \"" + "t".repeat(501) + "\"}"))
+                .andExpect(status().isBadRequest());
+    }
 }
