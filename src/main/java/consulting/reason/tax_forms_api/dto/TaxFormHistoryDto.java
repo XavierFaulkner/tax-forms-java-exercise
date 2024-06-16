@@ -18,7 +18,7 @@ import lombok.Setter;
 @EqualsAndHashCode
 public class TaxFormHistoryDto {
 	private Integer id;
-	private TaxFormDto taxForm;
+	private Integer taxFormId;
 	private ZonedDateTime createdAt;
 	private TaxFormHistoryType type;
 }
