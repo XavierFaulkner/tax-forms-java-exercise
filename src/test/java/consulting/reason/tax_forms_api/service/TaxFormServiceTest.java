@@ -115,4 +115,9 @@ public class TaxFormServiceTest extends AbstractServiceTest {
         assertThat(violations).isNotEmpty();
         assertThat(violations).hasSize(4);
     }
+    
+    @Test
+    void testFormHistoryRelationship() {
+    	assertThat(taxFormService.findById(taxForm.getId()).get().getHistory()).hasSize(0);
+    }
 }

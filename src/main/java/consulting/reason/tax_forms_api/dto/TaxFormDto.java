@@ -4,6 +4,7 @@ import consulting.reason.tax_forms_api.enums.TaxFormStatus;
 import lombok.*;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,4 +20,5 @@ public class TaxFormDto {
     private TaxFormDetailsDto details;
     private ZonedDateTime createdAt;
     private ZonedDateTime updatedAt;
+    private List<TaxFormHistoryDto> history;
 }
