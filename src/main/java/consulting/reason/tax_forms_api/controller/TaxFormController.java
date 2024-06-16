@@ -46,4 +46,10 @@ public class TaxFormController {
     	return taxFormService.returnForm(id)
     			.orElseThrow(() -> new TaxFormNotFoundException(id));
     }
+    
+    @GetMapping("/accept/{id}")
+    public TaxFormDto acceptTaxForm(@PathVariable("id") Integer id) {
+    	return taxFormService.acceptForm(id)
+    			.orElseThrow(() -> new TaxFormNotFoundException(id));
+    }
 }

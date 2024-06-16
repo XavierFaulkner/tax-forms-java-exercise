@@ -183,4 +183,27 @@ public class TaxFormServiceTest extends AbstractServiceTest {
     	Optional<TaxFormDto> result = taxFormService.returnForm(0);
     	assertThat(result).isEmpty();
     }
+    
+    @Test
+    void testAcceptForm() {
+    	taxForm.setStatus(TaxFormStatus.SUBMITTED);
+		Optional<TaxFormDto> result = taxFormService.acceptForm(taxForm.getId());
+		assertTrue(result.isPresent());
+		assertEquals(TaxFormStatus.ACCEPTED, result.get().getStatus());
+		verify(taxFormHistoryRepository).save(any(TaxFormHistory.class));
+    }
+    
+    @Test
+    void testAcceptFormInvalidWorkflow() {
+        //taxForm status is NOT_STARTED
+    	assertThrows(TaxFormStatusException.class, () -> taxFormService.acceptForm(taxForm.getId()));
+    	assertEquals(TaxFormStatus.NOT_STARTED, taxForm.getStatus());
+        verify(taxFormHistoryRepository, never()).save(any(TaxFormHistory.class));
+    }
+    
+    @Test
+    void testAcceptFormIdNotFound() {
+    	Optional<TaxFormDto> result = taxFormService.acceptForm(0);
+    	assertThat(result).isEmpty();
+    }
 }
