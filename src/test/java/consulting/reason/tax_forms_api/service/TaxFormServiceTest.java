@@ -1,33 +1,49 @@
 package consulting.reason.tax_forms_api.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import java.util.Optional;
+import java.util.Set;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+
 import consulting.reason.tax_forms_api.AbstractServiceTest;
 import consulting.reason.tax_forms_api.dto.TaxFormDetailsDto;
 import consulting.reason.tax_forms_api.dto.TaxFormDto;
 import consulting.reason.tax_forms_api.dto.request.TaxFormDetailsRequest;
 import consulting.reason.tax_forms_api.entity.TaxForm;
+import consulting.reason.tax_forms_api.entity.TaxFormHistory;
 import consulting.reason.tax_forms_api.enums.TaxFormStatus;
 import consulting.reason.tax_forms_api.exception.TaxFormStatusException;
+import consulting.reason.tax_forms_api.repository.TaxFormHistoryRepository;
 import consulting.reason.tax_forms_api.repository.TaxFormRepository;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
+@ExtendWith(MockitoExtension.class)
 public class TaxFormServiceTest extends AbstractServiceTest {
     @Autowired
+    @SpyBean
     private TaxFormRepository taxFormRepository;
+    @Autowired
+    @SpyBean
+    private TaxFormHistoryRepository taxFormHistoryRepository;
     private TaxFormService taxFormService;
     private TaxForm taxForm;
     private TaxFormDto taxFormDto;
@@ -43,7 +59,8 @@ public class TaxFormServiceTest extends AbstractServiceTest {
     void before() {
         taxFormService = new TaxFormServiceImpl(
                 taxFormRepository,
-                modelMapper
+                modelMapper,
+                taxFormHistoryRepository
         );
 
         taxForm = taxFormRepository.save(TaxForm.builder()
@@ -119,5 +136,28 @@ public class TaxFormServiceTest extends AbstractServiceTest {
     @Test
     void testFormHistoryRelationship() {
     	assertThat(taxFormService.findById(taxForm.getId()).get().getHistory()).hasSize(0);
+    }
+    
+    @Test
+    void testSubmitForm() {
+    	taxForm.setStatus(TaxFormStatus.IN_PROGRESS);
+		Optional<TaxFormDto> result = taxFormService.submitForm(taxForm.getId());
+		assertTrue(result.isPresent());
+		assertEquals(TaxFormStatus.SUBMITTED, result.get().getStatus());
+		verify(taxFormHistoryRepository).save(any(TaxFormHistory.class));
+    }
+    
+    @Test
+    void testSubmitFormInvalidWorkflow() {
+        //taxForm status is NOT_STARTED
+    	assertThrows(TaxFormStatusException.class, () -> taxFormService.submitForm(taxForm.getId()));
+    	assertEquals(TaxFormStatus.NOT_STARTED, taxForm.getStatus());
+        verify(taxFormHistoryRepository, never()).save(any(TaxFormHistory.class));
+    }
+    
+    @Test
+    void testSubmitFormIdNotFound() {
+    	Optional<TaxFormDto> result = taxFormService.submitForm(0);
+    	assertThat(result).isEmpty();
     }
 }

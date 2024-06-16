@@ -4,6 +4,7 @@ import consulting.reason.tax_forms_api.AbstractControllerTest;
 import consulting.reason.tax_forms_api.dto.TaxFormDetailsDto;
 import consulting.reason.tax_forms_api.dto.TaxFormDto;
 import consulting.reason.tax_forms_api.dto.request.TaxFormDetailsRequest;
+import consulting.reason.tax_forms_api.enums.TaxFormStatus;
 import consulting.reason.tax_forms_api.service.TaxFormService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,11 +12,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -116,7 +119,7 @@ public class TaxFormControllerTest extends AbstractControllerTest {
     void testRatioIsInvalid() throws Exception {
         mockMvc.perform(patch(Endpoints.FORMS + "/" + taxFormDto.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"assessedValue\": -1, \"appraisedValue\": 50000, \"ratio\": 5, \"comments\": \"testing\"}"))
+                        .content("{\"assessedValue\": 1, \"appraisedValue\": 50000, \"ratio\": 5, \"comments\": \"testing\"}"))
                 .andExpect(status().isBadRequest());
     }
     
@@ -124,7 +127,30 @@ public class TaxFormControllerTest extends AbstractControllerTest {
     void testCommentsIsInvalid() throws Exception {
         mockMvc.perform(patch(Endpoints.FORMS + "/" + taxFormDto.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"assessedValue\": -1, \"appraisedValue\": 50000, \"ratio\": 0.5, \"comments\": \"" + "t".repeat(501) + "\"}"))
+                        .content("{\"assessedValue\": 1, \"appraisedValue\": 50000, \"ratio\": 0.5, \"comments\": \"" + "t".repeat(501) + "\"}"))
                 .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    void testSubmit() throws Exception {
+    	given(taxFormService.save(taxFormDto.getId(), taxFormDetailsRequest)).willReturn(Optional.of(taxFormDto));
+    	given(taxFormService.submitForm(taxFormDto.getId())).willAnswer(invocation -> {
+            taxFormDto.setStatus(TaxFormStatus.SUBMITTED);
+            return Optional.of(taxFormDto);
+        });
+    	mockMvc.perform(patch(Endpoints.FORMS + "/" + taxFormDto.getId())
+                .content(objectMapper.writeValueAsString(taxFormDetailsRequest))
+                .contentType(MediaType.APPLICATION_JSON));
+        MvcResult result = mockMvc.perform(get(Endpoints.FORMS + "/submit/" + taxFormDto.getId()))
+        		.andExpect(status().isOk())
+        		.andReturn();
+        TaxFormDto updatedTaxForm = objectMapper.readValue(result.getResponse().getContentAsString(), TaxFormDto.class);
+        assertEquals(TaxFormStatus.SUBMITTED, updatedTaxForm.getStatus());
+    }
+    
+    @Test
+    void testSubmitHandlesNotFound() throws Exception {
+        mockMvc.perform(get(Endpoints.FORMS + "/submit/" + taxFormDto.getId()))
+        		.andExpect(status().isNotFound());
     }
 }

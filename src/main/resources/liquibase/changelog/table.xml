@@ -34,5 +34,27 @@
             Creates the tax_forms table.
         </comment>
     </changeSet>
+    
+    <changeSet id="TABLE_02" runOnChange="false" author="jb">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="tax_form_history"/>
+            </not>
+        </preConditions>
+        <sql>
+            CREATE TABLE tax_form_history (
+                id			SERIAL PRIMARY KEY,
+                tax_form_id INTEGER NOT NULL,
+                created_at 	TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                type 		VARCHAR(255) NOT NULL,
+                CONSTRAINT 	fk_tax_form
+                    FOREIGN KEY (tax_form_id)
+                    REFERENCES tax_forms (id)
+            );
+        </sql>
+        <comment>
+            Creates the tax_form_history table.
+        </comment>
+    </changeSet>
 
 </databaseChangeLog>
