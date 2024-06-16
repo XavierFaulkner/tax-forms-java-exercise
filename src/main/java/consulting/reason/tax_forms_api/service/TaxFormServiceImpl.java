@@ -12,6 +12,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,8 +69,28 @@ public class TaxFormServiceImpl implements TaxFormService {
                     
                     TaxFormHistory history = TaxFormHistory.builder()
         					.taxForm(taxForm)
-        					.createdAt(null)
+        					.createdAt(ZonedDateTime.now())
         					.type(TaxFormHistoryType.SUBMITTED)
+        					.build();
+                    
+                    taxFormHistoryRepository.save(history);
+
+                    return modelMapper.map(taxForm, TaxFormDto.class);
+                });
+	}
+
+	@Override
+	public Optional<TaxFormDto> returnForm(Integer id) {
+		return taxFormRepository.findById(id)
+                .map(taxForm -> {
+                    TaxFormStatusUtils.returnForm(taxForm);
+
+                    taxFormRepository.save(taxForm);
+                    
+                    TaxFormHistory history = TaxFormHistory.builder()
+        					.taxForm(taxForm)
+        					.createdAt(ZonedDateTime.now())
+        					.type(TaxFormHistoryType.RETURNED)
         					.build();
                     
                     taxFormHistoryRepository.save(history);

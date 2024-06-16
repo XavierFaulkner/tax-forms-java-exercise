@@ -14,4 +14,6 @@ public interface TaxFormService {
     Optional<TaxFormDto> save(Integer id, TaxFormDetailsRequest taxFormDetailsRequest);
     
     Optional<TaxFormDto> submitForm(Integer id);
+
+	Optional<TaxFormDto> returnForm(Integer id);
 }

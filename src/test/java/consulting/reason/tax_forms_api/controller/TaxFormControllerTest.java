@@ -133,14 +133,10 @@ public class TaxFormControllerTest extends AbstractControllerTest {
     
     @Test
     void testSubmit() throws Exception {
-    	given(taxFormService.save(taxFormDto.getId(), taxFormDetailsRequest)).willReturn(Optional.of(taxFormDto));
     	given(taxFormService.submitForm(taxFormDto.getId())).willAnswer(invocation -> {
             taxFormDto.setStatus(TaxFormStatus.SUBMITTED);
             return Optional.of(taxFormDto);
         });
-    	mockMvc.perform(patch(Endpoints.FORMS + "/" + taxFormDto.getId())
-                .content(objectMapper.writeValueAsString(taxFormDetailsRequest))
-                .contentType(MediaType.APPLICATION_JSON));
         MvcResult result = mockMvc.perform(get(Endpoints.FORMS + "/submit/" + taxFormDto.getId()))
         		.andExpect(status().isOk())
         		.andReturn();
@@ -151,6 +147,25 @@ public class TaxFormControllerTest extends AbstractControllerTest {
     @Test
     void testSubmitHandlesNotFound() throws Exception {
         mockMvc.perform(get(Endpoints.FORMS + "/submit/" + taxFormDto.getId()))
+        		.andExpect(status().isNotFound());
+    }
+    
+    @Test
+    void testReturnForm() throws Exception {
+    	given(taxFormService.returnForm(taxFormDto.getId())).willAnswer(invocation -> {
+            taxFormDto.setStatus(TaxFormStatus.RETURNED);
+            return Optional.of(taxFormDto);
+        });
+        MvcResult result = mockMvc.perform(get(Endpoints.FORMS + "/return/" + taxFormDto.getId()))
+        		.andExpect(status().isOk())
+        		.andReturn();
+        TaxFormDto updatedTaxForm = objectMapper.readValue(result.getResponse().getContentAsString(), TaxFormDto.class);
+        assertEquals(TaxFormStatus.RETURNED, updatedTaxForm.getStatus());
+    }
+    
+    @Test
+    void testReturntHandlesNotFound() throws Exception {
+        mockMvc.perform(get(Endpoints.FORMS + "/return/" + taxFormDto.getId()))
         		.andExpect(status().isNotFound());
     }
 }

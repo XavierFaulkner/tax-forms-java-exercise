@@ -32,7 +32,17 @@ public class TaxFormStatusUtils {
     }
 
     public static void returnForm(TaxForm taxForm) throws TaxFormStatusException {
-        // Implement with task 4
+    	if (taxForm.getStatus().equals(TaxFormStatus.IN_PROGRESS) ||
+        		taxForm.getStatus().equals(TaxFormStatus.NOT_STARTED) ||
+        		taxForm.getStatus().equals(TaxFormStatus.RETURNED) ||
+        		taxForm.getStatus().equals(TaxFormStatus.ACCEPTED)) {
+        	throw new TaxFormStatusException(
+                    taxForm,
+                    TaxFormStatus.RETURNED
+            );
+        }
+        
+        taxForm.setStatus(TaxFormStatus.RETURNED);
     }
 
     public static void accept(TaxForm taxForm) throws TaxFormStatusException {
